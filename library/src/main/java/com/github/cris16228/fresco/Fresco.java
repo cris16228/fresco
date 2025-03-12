@@ -96,6 +96,7 @@ public class Fresco {
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap);
                     imageView.invalidate();
+                    loadImage.onSuccess(bitmap);
                 } else {
                     imageViews.put(new WeakReference<>(imageView), urlPath);
                     queuePhoto(urlPath, imageView);
