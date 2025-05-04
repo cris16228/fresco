@@ -14,8 +14,6 @@ import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 
-import com.github.cris16228.fresco.Base64Utils;
-import com.github.cris16228.fresco.FileUtils;
 import com.github.cris16228.fresco.interfaces.LoadImage;
 
 import java.io.BufferedInputStream;
@@ -96,7 +94,8 @@ public class Fresco {
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap);
                     imageView.invalidate();
-                    loadImage.onSuccess(bitmap);
+                    if (loadImage != null)
+                        loadImage.onSuccess(bitmap);
                 } else {
                     imageViews.put(new WeakReference<>(imageView), urlPath);
                     queuePhoto(urlPath, imageView);
@@ -340,13 +339,23 @@ public class Fresco {
             Bitmap _image = fileUtils.decodeFile(file);
             if (_image != null)
                 return _image;
-            thumbnail = retriever.getFrameAtTime(5000000);
-            assert thumbnail != null;
-            InputStream is = bitmapToInputStream(thumbnail);
-            OutputStream os = Files.newOutputStream(file.toPath());
-            fileUtils.copyStream(is, os);
-            is.close();
-            os.close();
+            String ms = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            if (!StringUtils.isEmpty(ms)) {
+                thumbnail = retriever.getFrameAtTime(Integer.parseInt(ms) < 5000000 ? 0 : 5000000);
+            } else {
+                thumbnail = retriever.getFrameAtTime(5000000);
+            }
+            InputStream is;
+            if (thumbnail != null) {
+                is = bitmapToInputStream(thumbnail);
+                OutputStream os = Files.newOutputStream(file.toPath());
+                fileUtils.copyStream(is, os);
+                is.close();
+                os.close();
+            }
+            else {
+                return null;
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
