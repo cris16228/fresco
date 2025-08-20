@@ -352,8 +352,7 @@ public class Fresco {
                 fileUtils.copyStream(is, os);
                 is.close();
                 os.close();
-            }
-            else {
+            } else {
                 return null;
             }
         } catch (Exception e) {
@@ -373,6 +372,13 @@ public class Fresco {
         if (file.exists() && file.length() > 0) {
             Bitmap _image = fileUtils.decodeFile(file);
             if (_image != null) {
+                Log.e("getBitmap", "get bitmap from cache - URL: " + url +
+                        ", path: " + file.getAbsolutePath() +
+                        ", size: " + file.length() +
+                        ", width: " + _image.getWidth() +
+                        ", height: " + _image.getHeight() +
+                        ", density: " + _image.getDensity() +
+                        ", getByteCount: " + _image.getByteCount());
                 return _image;
             }
         }
