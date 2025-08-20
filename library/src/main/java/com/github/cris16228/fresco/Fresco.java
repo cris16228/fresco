@@ -56,6 +56,8 @@ public class Fresco {
     private LoadImage loadImage;
     private int width;
     private int height;
+    private String quality;
+    private boolean skipCache;
 
 
     public static Fresco with(Context context) {
@@ -76,6 +78,13 @@ public class Fresco {
 
     public Fresco load(String url) {
         this.urlPath = url;
+        this.quality = "original";
+        this.skipCache = false;
+        return this;
+    }
+
+    public Fresco skipCache(boolean skip) {
+        this.skipCache = skip;
         return this;
     }
 
@@ -87,7 +96,9 @@ public class Fresco {
     public Fresco into(ImageView imageView) {
         imageView.setImageBitmap(null);
         imageView.setImageDrawable(null);
-        imageView.setTag(urlPath);
+        // Store both URL and skipCache flag in the tag
+        imageView.setTag(R.id.fresco_url, urlPath);
+        imageView.setTag(R.id.fresco_skip_cache, skipCache);
         executor.execute(() -> {
             Bitmap bitmap = memoryCache.get(urlPath);
             handler.post(() -> {
@@ -304,7 +315,6 @@ public class Fresco {
         return Bitmap.createBitmap(bitmap, 0, 0, targetWidth, targetHeight, matrix, true);
     }
 
-
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
         final int width = options.outWidth;
@@ -367,8 +377,18 @@ public class Fresco {
         return fileUtils.decodeFile(file);
     }
 
+    private String getCacheKey(String url) {
+        return url + "_" + quality;
+    }
+
     private Bitmap getBitmap(String url) {
-        File file = fileCache.getFile(url);
+        // If skipCache is true, remove the cached file if it exists
+        if (skipCache) {
+            fileCache.clear(url);
+        }
+
+        String cacheKey = getCacheKey(url);
+        File file = fileCache.getFile(cacheKey);
         if (file.exists() && file.length() > 0) {
             Bitmap _image = fileUtils.decodeFile(file);
             if (_image != null) {

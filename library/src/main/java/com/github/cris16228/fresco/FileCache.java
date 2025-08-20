@@ -59,4 +59,19 @@ public class FileCache {
             }
         }
     }
+    
+    public boolean clear(String url) {
+        try {
+            String file_name = URLEncoder.encode(url, "UTF-8");
+            if (file_name != null) {
+                File file = new File(cacheDir, file_name);
+                if (file.exists()) {
+                    return file.delete();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
