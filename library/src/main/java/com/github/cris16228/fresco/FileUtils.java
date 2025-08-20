@@ -17,6 +17,10 @@ public class FileUtils {
 
     protected Bitmap decodeFile(File file) {
         if (file == null || !file.exists()) return null;
+        boolean fullResolution = true;
+        if (fullResolution) {
+            return BitmapFactory.decodeFile(file.getAbsolutePath());
+        }
         try (FileInputStream fis = new FileInputStream(file)) {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
