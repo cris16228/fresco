@@ -58,7 +58,8 @@ public class MemoryCache {
                 return cache.get(id);
             File file = new File(id);
             if (file.exists()) {
-                return decodeSampleFromFile(file.getAbsolutePath(), 200, 200);
+                // Load full quality image without downscaling
+                return BitmapFactory.decodeFile(file.getAbsolutePath());
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();

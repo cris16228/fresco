@@ -56,8 +56,6 @@ public class Fresco {
     private LoadImage loadImage;
     private int width;
     private int height;
-    private String quality;
-    private boolean skipCache;
 
 
     public static Fresco with(Context context) {
@@ -78,13 +76,6 @@ public class Fresco {
 
     public Fresco load(String url) {
         this.urlPath = url;
-        this.quality = "original";
-        this.skipCache = false;
-        return this;
-    }
-
-    public Fresco skipCache(boolean skip) {
-        this.skipCache = skip;
         return this;
     }
 
@@ -96,9 +87,7 @@ public class Fresco {
     public Fresco into(ImageView imageView) {
         imageView.setImageBitmap(null);
         imageView.setImageDrawable(null);
-        // Store both URL and skipCache flag in the tag
-        imageView.setTag(R.id.fresco_url, urlPath);
-        imageView.setTag(R.id.fresco_skip_cache, skipCache);
+        imageView.setTag(urlPath);
         executor.execute(() -> {
             Bitmap bitmap = memoryCache.get(urlPath);
             handler.post(() -> {
@@ -315,6 +304,7 @@ public class Fresco {
         return Bitmap.createBitmap(bitmap, 0, 0, targetWidth, targetHeight, matrix, true);
     }
 
+
     private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         final int height = options.outHeight;
         final int width = options.outWidth;
@@ -362,7 +352,8 @@ public class Fresco {
                 fileUtils.copyStream(is, os);
                 is.close();
                 os.close();
-            } else {
+            }
+            else {
                 return null;
             }
         } catch (Exception e) {
@@ -377,28 +368,11 @@ public class Fresco {
         return fileUtils.decodeFile(file);
     }
 
-    private String getCacheKey(String url) {
-        return url + "_" + quality;
-    }
-
     private Bitmap getBitmap(String url) {
-        // If skipCache is true, remove the cached file if it exists
-        if (skipCache) {
-            fileCache.clear(url);
-        }
-
-        String cacheKey = getCacheKey(url);
-        File file = fileCache.getFile(cacheKey);
+        File file = fileCache.getFile(url);
         if (file.exists() && file.length() > 0) {
             Bitmap _image = fileUtils.decodeFile(file);
             if (_image != null) {
-                Log.e("getBitmap", "get bitmap from cache - URL: " + url +
-                        ", path: " + file.getAbsolutePath() +
-                        ", size: " + file.length() +
-                        ", width: " + _image.getWidth() +
-                        ", height: " + _image.getHeight() +
-                        ", density: " + _image.getDensity() +
-                        ", getByteCount: " + _image.getByteCount());
                 return _image;
             }
         }
