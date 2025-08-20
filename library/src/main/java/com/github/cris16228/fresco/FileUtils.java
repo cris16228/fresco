@@ -56,16 +56,8 @@ public class FileUtils {
             while ((count = is.read(buffer)) != -1) {
                 os.write(buffer, 0, count);
                 progress += count;
-                /*if (contentLength > 0) {
-                    if (downloadProgress != null) {
-                        downloadProgress.downloadInProgress(progress, contentLength);
-                    }
-                }*/
             }
             os.flush();
-            /*if (downloadProgress != null) {
-                downloadProgress.downloadComplete();
-            }*/
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
