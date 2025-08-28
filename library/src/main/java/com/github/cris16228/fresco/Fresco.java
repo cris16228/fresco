@@ -133,7 +133,7 @@ public class Fresco {
             Bitmap bitmap = null;
             String path = null;
 
-            Log.d("Fresco", "Cache chet - cached: " + (cached != null) + ", length: " + (cached != null ? cached.length : 0));
+            Log.d("Fresco", "Cache check - cached: " + (cached != null) + ", length: " + (cached != null ? cached.length : 0));
 
             if (cached != null && cached.length > 0) {
                 bitmap = (Bitmap) cached[0];

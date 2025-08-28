@@ -47,16 +47,15 @@ public class MemoryCache {
     public synchronized Object[] get(String id) {
         if (StringUtils.isEmpty(path) || id == null) return null;
         try {
-            id = URLEncoder.encode(id, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            Log.e("MemoryCache", "Error encoding URL", e);
-        }
-        File cachedFile = new File(id);
-        id = cachedFile.getAbsolutePath();
-        try {
-            Object cached = cache.get(id);
-            if (cached != null)
-                return new Object[]{cache.get(id), null};
+            String encodedId = URLEncoder.encode(id, "UTF-8");
+            String cacheKey = new File(path, id).getAbsolutePath();
+
+            Bitmap cached = cache.get(cacheKey);
+            if (cached != null && !cached.isRecycled()) {
+                return new Object[]{cached, cacheKey};
+            }
+
+            File cachedFile = new File(id);
             if (cachedFile.exists() && cachedFile.length() > 0) {
                 Bitmap bitmap = BitmapFactory.decodeFile(cachedFile.getAbsolutePath());
                 if (bitmap != null) {
@@ -64,9 +63,8 @@ public class MemoryCache {
                     return new Object[]{bitmap, cachedFile.getAbsolutePath()};
                 }
             }
-        } catch (NullPointerException ex) {
-            ex.printStackTrace();
-            return null;
+        } catch (UnsupportedEncodingException e) {
+            Log.e("MemoryCache", "Error encoding URL", e);
         }
         return null;
     }
@@ -97,9 +95,13 @@ public class MemoryCache {
     }
 
     public synchronized void put(String id, Bitmap bitmap, boolean isLocal, boolean saveInCache) {
+        if (id == null || bitmap == null) return;
         try {
+            String encodedId = URLEncoder.encode(id, "UTF-8");
+            String cacheKey = new File(path, encodedId).getAbsolutePath();
+            cache.put(cacheKey, bitmap);
             if (isLocal) {
-                File file = new File(id);
+                File file = new File(cacheKey);
                 if (bitmap.getByteCount() > 0) {
                     if (!file.exists()) {
                         file.getParentFile().mkdirs();
@@ -109,9 +111,10 @@ public class MemoryCache {
                     Log.e("MemoryCache", "Bitmap is null");
                 }
             }
-            if (cache.get(id) != null)
-                size -= sizeInBytes(cache.get(id));
-            cache.put(id, bitmap);
+
+            if (cache.get(cacheKey) != null)
+                size -= sizeInBytes(cache.get(cacheKey));
+            cache.put(cacheKey, bitmap);
             size += sizeInBytes(bitmap);
         } catch (Throwable ex) {
             ex.printStackTrace();
