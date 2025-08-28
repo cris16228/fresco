@@ -48,7 +48,7 @@ public class MemoryCache {
         if (StringUtils.isEmpty(path) || id == null) return null;
         try {
             String encodedId = URLEncoder.encode(id, "UTF-8");
-            String cacheKey = new File(path, id).getAbsolutePath();
+            String cacheKey = new File(path, encodedId).getAbsolutePath();
 
             Bitmap cached = cache.get(cacheKey);
             if (cached != null && !cached.isRecycled()) {
