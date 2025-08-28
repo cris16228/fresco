@@ -55,11 +55,11 @@ public class MemoryCache {
                 return new Object[]{cached, cacheKey};
             }
 
-            File cachedFile = new File(encodedId);
+            File cachedFile = new File(path, encodedId);
             if (cachedFile.exists() && cachedFile.length() > 0) {
                 Bitmap bitmap = BitmapFactory.decodeFile(cachedFile.getAbsolutePath());
                 if (bitmap != null) {
-                    cache.put(encodedId, bitmap);
+                    cache.put(cacheKey, bitmap);
                     return new Object[]{bitmap, cachedFile.getAbsolutePath()};
                 }
             }
@@ -102,7 +102,7 @@ public class MemoryCache {
             String cacheKey = new File(path, encodedId).getAbsolutePath();
             cache.put(cacheKey, bitmap);
             if (isLocal) {
-                File file = new File(cacheKey);
+                File file = new File(path, encodedId);
                 if (bitmap.getByteCount() > 0) {
                     if (!file.exists()) {
                         file.getParentFile().mkdirs();
