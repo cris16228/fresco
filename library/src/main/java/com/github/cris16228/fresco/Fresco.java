@@ -121,7 +121,7 @@ public class Fresco {
     }
 
     public Fresco into(ImageView imageView) {
-        if (imageView==null || urlPath==null) {
+        if (imageView == null || urlPath == null) {
             return this;
         }
         imageView.setImageBitmap(null);
@@ -132,25 +132,23 @@ public class Fresco {
             Object[] cached = memoryCache.get(urlPath);
             Bitmap bitmap = null;
             String path = null;
-            if (cached!=null && cached.length>0) {
+            if (cached != null && cached.length > 0) {
                 bitmap = (Bitmap) cached[0];
-                if (cached.length>1) {
+                if (cached.length > 1) {
                     path = (String) cached[1];
                 }
             }
-            final Bitmap finalBitmap = bitmap;
-            final String finalPath = path;
 
+            if (bitmap != null && rotation != Rotation.NONE) {
+                int rotationDegree = getRotationDegree(rotation, path);
+                if (rotationDegree != 0) {
+                    bitmap = rotateImage(bitmap, rotationDegree);
+                }
+            }
+            final Bitmap finalBitmap = bitmap;
             handler.post(() -> {
-            if (finalBitmap != null && !finalBitmap.isRecycled()) {
+                if (finalBitmap != null && !finalBitmap.isRecycled()) {
                     imageView.setImageBitmap(finalBitmap);
-                    if (finalPath != null && rotation != Rotation.NONE) {
-                        if (rotation == Rotation.AUTO) {
-                            rotateImage(imageView, finalPath);
-                        } else {
-                            rotateImage(imageView, finalPath, rotation);
-                        }
-                    }
                     imageView.invalidate();
                     if (loadImage != null)
                         loadImage.onSuccess(finalBitmap);
@@ -162,6 +160,36 @@ public class Fresco {
         });
         return this;
     }
+
+    private int getRotationDegree(Rotation rotation, String path) {
+        switch (rotation) {
+            case ROTATE_90:
+                return 90;
+            case ROTATE_180:
+                return 180;
+            case ROTATE_270:
+                return 270;
+            case AUTO:
+                try {
+                    ExifInterface exifInterface = new ExifInterface(path);
+                    int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                    switch (orientation) {
+                        case ExifInterface.ORIENTATION_ROTATE_90:
+                            return 90;
+                        case ExifInterface.ORIENTATION_ROTATE_180:
+                            return 180;
+                        case ExifInterface.ORIENTATION_ROTATE_270:
+                            return 270;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                return 0;
+            default:
+                return 0;
+        }
+    }
+/*
 
     private void rotateImage(ImageView imageView, String path, Rotation rotation) {
         switch (rotation) {
@@ -205,16 +233,17 @@ public class Fresco {
             e.printStackTrace();
         }
     }
+*/
 
-    private void rotateImage(ImageView imageView, String path, int rotation) {
+    private Bitmap rotateImage(Bitmap bitmap, int rotation) {
+        if (bitmap == null || bitmap.isRecycled()) return null;
         try {
             Matrix matrix = new Matrix();
             matrix.postRotate(rotation);
-            Bitmap bitmap = BitmapFactory.decodeFile(path);
-            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-            imageView.setImageBitmap(bitmap);
+            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         } catch (Exception e) {
             e.printStackTrace();
+            return bitmap;
         }
     }
 
