@@ -45,20 +45,24 @@ public class MemoryCache {
     }
 
     public synchronized Object[] get(String id) {
-        if (StringUtils.isEmpty(path)) return null;
+        if (StringUtils.isEmpty(path) || id == null) return null;
         try {
             id = URLEncoder.encode(id, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            Log.e("MemoryCache", "Error encoding URL", e);
         }
-        id = new File(path, id).getAbsolutePath();
+        File cachedFile = new File(id);
+        id = cachedFile.getAbsolutePath();
         try {
-            if (cache.get(id) != null)
+            Object cached = cache.get(id);
+            if (cached != null)
                 return new Object[]{cache.get(id), null};
-            File file = new File(id);
-            if (file.exists()) {
-                // Load full quality image without downscaling
-                return new Object[]{BitmapFactory.decodeFile(file.getAbsolutePath()), file.getAbsolutePath()};
+            if (cachedFile.exists() && cachedFile.length() > 0) {
+                Bitmap bitmap = BitmapFactory.decodeFile(cachedFile.getAbsolutePath());
+                if (bitmap != null) {
+                    cache.put(id, bitmap);
+                    return new Object[]{bitmap, cachedFile.getAbsolutePath()};
+                }
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();
