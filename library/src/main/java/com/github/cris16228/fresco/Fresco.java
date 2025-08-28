@@ -121,25 +121,39 @@ public class Fresco {
     }
 
     public Fresco into(ImageView imageView) {
+        if (imageView==null || urlPath==null) {
+            return this;
+        }
         imageView.setImageBitmap(null);
         imageView.setImageDrawable(null);
         imageView.setTag(urlPath);
+
         executor.execute(() -> {
-            Bitmap bitmap = (Bitmap) memoryCache.get(urlPath)[0];
-            String path = (String) memoryCache.get(urlPath)[1];
+            Object[] cached = memoryCache.get(urlPath);
+            Bitmap bitmap = null;
+            String path = null;
+            if (cached!=null && cached.length>0) {
+                bitmap = (Bitmap) cached[0];
+                if (cached.length>1) {
+                    path = (String) cached[1];
+                }
+            }
+            final Bitmap finalBitmap = bitmap;
+            final String finalPath = path;
+
             handler.post(() -> {
-                if (bitmap != null) {
-                    imageView.setImageBitmap(bitmap);
-                    if (path != null && rotation != Rotation.NONE) {
+            if (finalBitmap != null && !finalBitmap.isRecycled()) {
+                    imageView.setImageBitmap(finalBitmap);
+                    if (finalPath != null && rotation != Rotation.NONE) {
                         if (rotation == Rotation.AUTO) {
-                            rotateImage(imageView, path);
+                            rotateImage(imageView, finalPath);
                         } else {
-                            rotateImage(imageView, path, rotation);
+                            rotateImage(imageView, finalPath, rotation);
                         }
                     }
                     imageView.invalidate();
                     if (loadImage != null)
-                        loadImage.onSuccess(bitmap);
+                        loadImage.onSuccess(finalBitmap);
                 } else {
                     imageViews.put(new WeakReference<>(imageView), urlPath);
                     queuePhoto(urlPath, imageView);
