@@ -132,23 +132,25 @@ public class Fresco {
             Object[] cached = memoryCache.get(urlPath);
             Bitmap bitmap = null;
             String path = null;
+
+            Log.d("Fresco", "Cache chet - cached: " + (cached != null) + ", length: " + (cached != null ? cached.length : 0));
+
             if (cached != null && cached.length > 0) {
                 bitmap = (Bitmap) cached[0];
                 if (cached.length > 1) {
                     path = (String) cached[1];
                 }
+                Log.d("Fresco", "Bitmap from cache - valid: " + (bitmap != null) + ", recycled: " + (bitmap != null && bitmap.isRecycled()));
             }
-
             if (bitmap != null && rotation != Rotation.NONE) {
                 Log.d("Fresco", "Rotating image: " + rotation);
                 int rotationDegree = getRotationDegree(rotation, path);
                 Log.d("Fresco", "Rotation degree: " + rotationDegree);
                 if (rotationDegree != 0) {
                     bitmap = rotateImage(bitmap, rotationDegree);
-                    if (bitmap!=null) {
+                    if (bitmap != null) {
                         Log.d("Fresco", "Rotation successful");
-                    }
-                    else {
+                    } else {
                         Log.e("Fresco", "Rotation failed");
                     }
                 }
@@ -183,7 +185,7 @@ public class Fresco {
                 return 270;
             case AUTO:
                 try {
-                    if (path==null) {
+                    if (path == null) {
                         Log.e("Fresco", "getRotationDegree: path is null");
                         return 0;
                     }
@@ -258,11 +260,10 @@ public class Fresco {
         try {
             Matrix matrix = new Matrix();
             matrix.postRotate(rotation);
-            Bitmap rotated =  Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-            if (rotated==bitmap) {
+            Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            if (rotated == bitmap) {
                 Log.e("Fresco", "Rotation failed - same bitmap returned");
-            }
-            else {
+            } else {
                 Log.d("Fresco", "Rotation successful");
             }
             return rotated;
