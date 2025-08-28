@@ -96,6 +96,7 @@ public class MemoryCache {
 
     public synchronized void put(String id, Bitmap bitmap, boolean isLocal, boolean saveInCache) {
         if (id == null || bitmap == null) return;
+
         try {
             String encodedId = URLEncoder.encode(id, "UTF-8");
             String cacheKey = new File(path, encodedId).getAbsolutePath();
