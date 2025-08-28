@@ -7,7 +7,6 @@ import android.util.Base64;
 import android.util.Log;
 import android.util.LruCache;
 
-
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -35,7 +34,7 @@ public class MemoryCache {
         };
     }
 
-    public Bitmap getBitmap(byte[] bytes) {
+    public Object[] getBitmap(byte[] bytes) {
         Base64Utils.Base64Encoder encoder = new Base64Utils.Base64Encoder();
         String key = encoder.encrypt(Arrays.toString(bytes), Base64.NO_WRAP, null);
         return get(key);
@@ -45,7 +44,7 @@ public class MemoryCache {
         limit = _limit;
     }
 
-    public synchronized Bitmap get(String id) {
+    public synchronized Object[] get(String id) {
         if (StringUtils.isEmpty(path)) return null;
         try {
             id = URLEncoder.encode(id, "UTF-8");
@@ -55,11 +54,11 @@ public class MemoryCache {
         id = new File(path, id).getAbsolutePath();
         try {
             if (cache.get(id) != null)
-                return cache.get(id);
+                return new Object[]{cache.get(id), null};
             File file = new File(id);
             if (file.exists()) {
                 // Load full quality image without downscaling
-                return BitmapFactory.decodeFile(file.getAbsolutePath());
+                return new Object[]{BitmapFactory.decodeFile(file.getAbsolutePath()), file.getAbsolutePath()};
             }
         } catch (NullPointerException ex) {
             ex.printStackTrace();

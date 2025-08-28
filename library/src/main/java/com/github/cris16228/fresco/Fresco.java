@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Handler;
@@ -56,6 +57,36 @@ public class Fresco {
     private LoadImage loadImage;
     private int width;
     private int height;
+    private Rotation rotation = Rotation.NONE;
+
+    public enum Rotation {
+        ROTATE_90(90),
+        ROTATE_180(180),
+        ROTATE_270(270),
+        FLIP_VERTICAL(-2),
+        FLIP_HORIZONTAL(-3),
+        NONE(0),
+        AUTO(-1);
+
+        private final int value;
+
+        Rotation(int value) {
+            this.value = value;
+        }
+
+        public static Rotation fromString(String rotation) {
+            for (Rotation rot : Rotation.values()) {
+                if (String.valueOf(rot.value).equals(rotation)) {
+                    return rot;
+                }
+            }
+            throw new IllegalArgumentException("No constant with value " + rotation + " found");
+        }
+
+        public int getValue() {
+            return value;
+        }
+    }
 
 
     public static Fresco with(Context context) {
@@ -84,15 +115,28 @@ public class Fresco {
         return this;
     }
 
+    public Fresco rotate(Rotation rotation) {
+        this.rotation = rotation;
+        return this;
+    }
+
     public Fresco into(ImageView imageView) {
         imageView.setImageBitmap(null);
         imageView.setImageDrawable(null);
         imageView.setTag(urlPath);
         executor.execute(() -> {
-            Bitmap bitmap = memoryCache.get(urlPath);
+            Bitmap bitmap = (Bitmap) memoryCache.get(urlPath)[0];
+            String path = (String) memoryCache.get(urlPath)[1];
             handler.post(() -> {
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap);
+                    if (path != null && rotation != Rotation.NONE) {
+                        if (rotation == Rotation.AUTO) {
+                            rotateImage(imageView, path);
+                        } else {
+                            rotateImage(imageView, path, rotation);
+                        }
+                    }
                     imageView.invalidate();
                     if (loadImage != null)
                         loadImage.onSuccess(bitmap);
@@ -103,6 +147,61 @@ public class Fresco {
             });
         });
         return this;
+    }
+
+    private void rotateImage(ImageView imageView, String path, Rotation rotation) {
+        switch (rotation) {
+            case NONE:
+            case FLIP_HORIZONTAL:
+            case FLIP_VERTICAL:
+            default:
+                break;
+            case AUTO:
+                rotateImage(imageView, path);
+                break;
+            case ROTATE_90:
+                rotateImage(imageView, path, 90);
+                break;
+            case ROTATE_180:
+                rotateImage(imageView, path, 180);
+                break;
+            case ROTATE_270:
+                rotateImage(imageView, path, 270);
+                break;
+
+        }
+    }
+
+    private void rotateImage(ImageView imageView, String path) {
+        try {
+            ExifInterface exifInterface = new ExifInterface(path);
+            int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            switch (orientation) {
+                case ExifInterface.ORIENTATION_ROTATE_90:
+                    rotateImage(imageView, path, 90);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_180:
+                    rotateImage(imageView, path, 180);
+                    break;
+                case ExifInterface.ORIENTATION_ROTATE_270:
+                    rotateImage(imageView, path, 270);
+                    break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void rotateImage(ImageView imageView, String path, int rotation) {
+        try {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(rotation);
+            Bitmap bitmap = BitmapFactory.decodeFile(path);
+            bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            imageView.setImageBitmap(bitmap);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Bitmap decode() {
@@ -190,7 +289,7 @@ public class Fresco {
 
         Future<?> loadingTask = executor.submit(() -> {
             File file = fileCache.getFile(uri.getPath());
-            Bitmap thumbnail = memoryCache.get(uri.getPath());
+            Bitmap thumbnail = (Bitmap) memoryCache.get(uri.getPath())[0];
 
             if (thumbnail != null) {
                 Log.d("loadFileThumbnail", "Thumbnail found in memory cache for URI: " + uri);
@@ -352,8 +451,7 @@ public class Fresco {
                 fileUtils.copyStream(is, os);
                 is.close();
                 os.close();
-            }
-            else {
+            } else {
                 return null;
             }
         } catch (Exception e) {
