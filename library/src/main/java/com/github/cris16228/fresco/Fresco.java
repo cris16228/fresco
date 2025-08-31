@@ -133,24 +133,17 @@ public class Fresco {
             Bitmap bitmap = null;
             String path = null;
 
-            Log.d("Fresco", "Cache check - cached: " + (cached != null) + ", length: " + (cached != null ? cached.length : 0));
-
             if (cached != null && cached.length > 0) {
                 bitmap = (Bitmap) cached[0];
                 if (cached.length > 1) {
                     path = (String) cached[1];
                 }
-                Log.d("Fresco", "Bitmap from cache - valid: " + (bitmap != null) + ", recycled: " + (bitmap != null && bitmap.isRecycled()));
             }
             if (bitmap != null && rotation != Rotation.NONE) {
-                Log.d("Fresco", "Rotating image: " + rotation);
                 int rotationDegree = getRotationDegree(rotation, path);
-                Log.d("Fresco", "Rotation degree: " + rotationDegree);
                 if (rotationDegree != 0) {
                     bitmap = rotateImage(bitmap, rotationDegree);
-                    if (bitmap != null) {
-                        Log.d("Fresco", "Rotation successful");
-                    } else {
+                    if (bitmap == null) {
                         Log.e("Fresco", "Rotation failed");
                     }
                 }
@@ -172,16 +165,12 @@ public class Fresco {
     }
 
     private int getRotationDegree(Rotation rotation, String path) {
-        Log.d("Fresco", "getRotationDegree: " + rotation);
         switch (rotation) {
             case ROTATE_90:
-                Log.d("Fresco", "getRotationDegree: ROTATE_90");
                 return 90;
             case ROTATE_180:
-                Log.d("Fresco", "getRotationDegree: ROTATE_180");
                 return 180;
             case ROTATE_270:
-                Log.d("Fresco", "getRotationDegree: ROTATE_270");
                 return 270;
             case AUTO:
                 try {
@@ -191,7 +180,6 @@ public class Fresco {
                     }
                     ExifInterface exifInterface = new ExifInterface(path);
                     int orientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-                    Log.d("Fresco", "getRotationDegree: orientation: " + orientation);
                     switch (orientation) {
                         case ExifInterface.ORIENTATION_ROTATE_90:
                             return 90;
@@ -256,15 +244,12 @@ public class Fresco {
 
     private Bitmap rotateImage(Bitmap bitmap, int rotation) {
         if (bitmap == null || bitmap.isRecycled()) return null;
-        Log.d("Fresco", "Rotating image: " + rotation + "°");
         try {
             Matrix matrix = new Matrix();
             matrix.postRotate(rotation);
             Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
             if (rotated == bitmap) {
                 Log.e("Fresco", "Rotation failed - same bitmap returned");
-            } else {
-                Log.d("Fresco", "Rotation successful");
             }
             return rotated;
         } catch (Exception e) {
@@ -396,7 +381,6 @@ public class Fresco {
             if (_image != null)
                 return _image;
 
-            Log.e("getFileThumbnail", "URI scheme: " + uri.getScheme());
             if ("content".equals(uri.getScheme())) {
                 inputStream = context.getContentResolver().openInputStream(uri);
             } else if ("file".equals(uri.getScheme()) || uri.getScheme() == null) {
